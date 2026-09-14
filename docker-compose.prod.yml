@@ -1,0 +1,22 @@
+services:
+  lead-agent:
+    build: .
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - .env
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.lead-agent.rule=Host(`lead-agent.srv948101.hstgr.cloud`)
+      - traefik.http.routers.lead-agent.entrypoints=websecure
+      - traefik.http.routers.lead-agent.tls.certresolver=myresolver
+      - traefik.http.services.lead-agent.loadbalancer.server.port=3000
+    networks:
+      - root_web
+    volumes:
+      - ./data:/app/data
+
+networks:
+  root_web:
+    external: true

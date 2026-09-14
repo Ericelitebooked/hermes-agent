@@ -1,0 +1,24 @@
+services:
+  lead-app:
+    image: node:22
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./app:/app
+    command: sh -c "npm install && npm start"
+    labels:
+      - traefik.enable=true
+      - "traefik.http.routers.leadapp.rule=Host(`<YOUR_AGENT_DOMAIN>`) && (PathPrefix(`/api`) || PathPrefix(`/voice`) || PathPrefix(`/audio`) || PathPrefix(`/health`))"
+      - traefik.http.routers.leadapp.entrypoints=websecure
+      - traefik.http.routers.leadapp.tls.certresolver=letsencrypt
+      - traefik.http.routers.leadapp.priority=100
+      - traefik.http.services.leadapp.loadbalancer.server.port=3000
+    networks:
+      default:
+        name: <YOUR_HERMES_NETWORK>
+        external: true
+
+networks:
+  default:
+    name: <YOUR_HERMES_NETWORK>
+    external: true
