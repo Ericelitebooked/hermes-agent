@@ -23,7 +23,7 @@ async function logLead(leadData) {
 
     const timestamp = new Date().toISOString();
 
-    // 15 columns as specified
+    // 19 columns (15 original + 4 follow-up fields)
     const row = [
       timestamp, // Timestamp
       leadData.name || '', // Name
@@ -40,13 +40,17 @@ async function logLead(leadData) {
       leadData.followUpNote || '', // Follow Up Note
       leadData.problem || '', // Problem Description
       leadData.booked ? 'Yes' : 'No', // Inspection Booked
+      '', // Call Notes (empty initially)
+      '', // Follow-up Date (empty initially)
+      '', // Next Action (empty initially)
+      1, // Contact Attempt # (starts at 1)
     ];
 
     console.log('[GoogleSheets] Appending row for', leadData.name);
 
     const response = await sheets.spreadsheets.values.append({
       spreadsheetId: config.googleSheetId,
-      range: 'Sheet1!A:O',
+      range: 'Sheet1!A:S',
       valueInputOption: 'RAW',
       resource: {
         values: [row],
