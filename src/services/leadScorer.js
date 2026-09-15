@@ -42,7 +42,7 @@ Scoring guidelines:
     const response = await axios.post(
       'https://api.anthropic.com/v1/messages',
       {
-        model: 'claude-opus-4-1',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 500,
         messages: [
           {
