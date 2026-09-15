@@ -8,6 +8,8 @@ const { logLead } = require('../services/googleSheets');
 const router = express.Router();
 const VoiceResponse = twilio.twiml.VoiceResponse;
 
+const MAX_RESCHEDULE_ATTEMPTS = 2;
+
 // Helper: Generate voice response with ElevenLabs fallback
 async function generateVoiceMessage(message) {
   try {
@@ -131,15 +133,36 @@ router.post('/schedule', async (req, res) => {
 
     if (slots.length === 0) {
       console.log('[Voice/Schedule] No availability found');
-      const noSlotsMsg =
-        'Unfortunately, we have no availability on that date. Please try a different day.';
-      const audioUrl = await generateVoiceMessage(noSlotsMsg);
-      if (audioUrl) {
-        twiml.play(audioUrl);
+      const attempts = global.callContext[callSid].rescheduleAttempts || 0;
+
+      if (attempts < MAX_RESCHEDULE_ATTEMPTS) {
+        global.callContext[callSid].rescheduleAttempts = attempts + 1;
+        const noSlotsMsg =
+          'Unfortunately, we have no availability on that date. What other day works for you?';
+        const audioUrl = await generateVoiceMessage(noSlotsMsg);
+        if (audioUrl) {
+          twiml.play(audioUrl);
+        } else {
+          twiml.say(noSlotsMsg);
+        }
+        const gather = twiml.gather({
+          input: 'speech',
+          timeout: 60,
+          speechTimeout: 'auto',
+          action: '/voice/schedule',
+          method: 'POST',
+        });
       } else {
-        twiml.say(noSlotsMsg);
+        const giveUpMsg =
+          "We're having trouble finding a time that works. A team member will call you back shortly to get you scheduled. Thanks for your patience!";
+        const audioUrl = await generateVoiceMessage(giveUpMsg);
+        if (audioUrl) {
+          twiml.play(audioUrl);
+        } else {
+          twiml.say(giveUpMsg);
+        }
+        twiml.hangup();
       }
-      twiml.hangup();
     } else {
       // Offer the first available slot
       const firstSlot = slots[0];
@@ -233,12 +256,35 @@ router.post('/confirm', async (req, res) => {
         }
       }
     } else {
-      const declineMsg = 'No problem. Feel free to call us back when you find a better time.';
-      const audioUrl = await generateVoiceMessage(declineMsg);
-      if (audioUrl) {
-        twiml.play(audioUrl);
+      const attempts = context?.rescheduleAttempts || 0;
+
+      if (attempts < MAX_RESCHEDULE_ATTEMPTS) {
+        global.callContext[callSid].rescheduleAttempts = attempts + 1;
+        const declineMsg = 'No problem, what day or time would work better for you?';
+        const audioUrl = await generateVoiceMessage(declineMsg);
+        if (audioUrl) {
+          twiml.play(audioUrl);
+        } else {
+          twiml.say(declineMsg);
+        }
+        const gather = twiml.gather({
+          input: 'speech',
+          timeout: 60,
+          speechTimeout: 'auto',
+          action: '/voice/schedule',
+          method: 'POST',
+        });
+        res.type('text/xml').send(twiml.toString());
+        return;
       } else {
-        twiml.say(declineMsg);
+        const giveUpMsg =
+          "No problem. A team member will follow up with you to find a time that works. Thanks for calling!";
+        const audioUrl = await generateVoiceMessage(giveUpMsg);
+        if (audioUrl) {
+          twiml.play(audioUrl);
+        } else {
+          twiml.say(giveUpMsg);
+        }
       }
     }
 
