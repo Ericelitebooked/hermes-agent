@@ -46,7 +46,12 @@ async function textToSpeech(text, uniqueId = 'default') {
     const audioUrl = `${config.serverUrl}/audio/${filename}`;
     return audioUrl;
   } catch (error) {
-    console.error('[ElevenLabs] Error generating speech:', error.message);
+    const detail = error.response?.data
+      ? Buffer.isBuffer(error.response.data)
+        ? error.response.data.toString('utf8')
+        : JSON.stringify(error.response.data)
+      : error.message;
+    console.error('[ElevenLabs] Error generating speech:', detail);
     // Caller should fall back to Twilio <Say>
     return null;
   }

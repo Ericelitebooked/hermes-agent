@@ -48,7 +48,7 @@ router.post('/start', async (req, res) => {
 
     // Gather speech input for 1 minute, then go to /problem
     const gather = twiml.gather({
-      numDigits: 0,
+      input: 'speech',
       timeout: 60,
       speechTimeout: 'auto',
       action: '/voice/problem',
@@ -89,7 +89,7 @@ router.post('/problem', async (req, res) => {
 
     // Gather for day/time
     const gather = twiml.gather({
-      numDigits: 0,
+      input: 'speech',
       timeout: 60,
       speechTimeout: 'auto',
       action: '/voice/schedule',
@@ -160,8 +160,9 @@ router.post('/schedule', async (req, res) => {
         twiml.say(offerMsg);
       }
 
-      // Gather yes/no
+      // Gather yes/no (accepts either a spoken "yes" or pressing 1)
       const gather = twiml.gather({
+        input: ['dtmf', 'speech'],
         numDigits: 1,
         timeout: 30,
         speechTimeout: 'auto',
