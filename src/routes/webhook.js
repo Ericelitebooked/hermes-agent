@@ -6,8 +6,21 @@ const { logLead } = require('../services/googleSheets');
 
 const router = express.Router();
 
+// Handle preflight OPTIONS request for CORS
+router.options('/leads', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', 'https://roof-avenger.base44.app');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.sendStatus(200);
+});
+
 // Direct lead intake from Base44 form (or any JSON POST)
 router.post('/leads', async (req, res) => {
+  // CORS headers for Base44 form submissions
+  res.setHeader('Access-Control-Allow-Origin', 'https://roof-avenger.base44.app');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
   try {
     console.log('[API] Lead submission received');
 
