@@ -161,6 +161,29 @@ app.get('/demo', (req, res) => {
         .booking { border-left: 1px solid #eee; padding-left: 40px; }
         h2 { margin-top: 0; }
       </style>
+      
+      <!-- Google Analytics 4 -->
+      <script async src="https://www.googletagmanager.com/gtag/js?id=YOUR_GA4_ID"></script>
+      <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'YOUR_GA4_ID');
+        
+        // Track video events
+        document.addEventListener('play', function(e) {
+          if (e.target.tagName === 'IFRAME' || e.target.classList.contains('demo-video')) {
+            gtag('event', 'video_start');
+          }
+        }, true);
+        
+        // Track booking form focus
+        document.addEventListener('focus', function(e) {
+          if (e.target.tagName === 'IFRAME' && e.target.src.includes('cal.com')) {
+            gtag('event', 'booking_form_focus');
+          }
+        }, true);
+      </script>
     </head>
     <body>
       <div class="container">
@@ -195,21 +218,20 @@ app.get('/demo', (req, res) => {
 
 ---
 
-## Video Hosting Options
+## Video Hosting: YouTube (Chosen)
 
-### Option A: Vimeo (Recommended)
-- Cost: $240/year (Pro plan)
-- Pros: Unlisted videos, professional, no ads, good video quality
-- Cons: Paid
-- Setup: Create account → upload video as "Unlisted" → get embed code
-
-### Option B: YouTube (Free)
-- Cost: Free
-- Pros: Free, good delivery
-- Cons: Shows YouTube branding, others can find via search (even if unlisted)
-- Setup: Upload as "Unlisted" → get embed code
-
-**Recommendation: Vimeo** if you want full control and professionalism. YouTube if you want free.
+**Setup:**
+1. Create YouTube channel (or use existing one)
+2. Upload Video 1 as **"Unlisted"** (not Private, not Public)
+   - Unlisted = only people with the link can find it
+   - No ads (keep YouTube brand minimal)
+3. Get embed code:
+   - Click Share → Embed
+   - Copy the iframe code
+   - Paste into `/demo` landing page in the `<video>` section
+4. Test:
+   - Click embed link, verify video plays
+   - Verify analytics track view
 
 ---
 
@@ -307,6 +329,12 @@ P.S. If you have any questions before the call, just reply to this email.
 - [ ] Get embed code
 - [ ] Paste into `/demo` landing page
 
+### Phase 3b: Set Up Analytics (Before deploying)
+- [ ] Create Google Analytics 4 account (or use existing)
+- [ ] Get GA4 Measurement ID (starts with "G-")
+- [ ] Replace `YOUR_GA4_ID` in `/demo` page code with real ID
+- [ ] Test: load `/demo` page → open browser DevTools → verify GA events fire
+
 ### Phase 4: Test Full Flow (This week)
 - [ ] Submit test prospect form
 - [ ] Check: you get notification email
@@ -314,13 +342,29 @@ P.S. If you have any questions before the call, just reply to this email.
 - [ ] Check: prospect clicks link → sees demo page
 - [ ] Check: video plays
 - [ ] Check: booking form pre-fills correctly
+- [ ] Check: GA4 shows video_start + booking_form_focus events
 - [ ] Book a test call to confirm flow
 
 ---
 
-## Open Questions
+## Confirmed Decisions (2026-09-16)
 
-1. **Domain email** — what's your domain? (roofavenger.com, or something else?) Needed for SPF/DKIM setup
-2. **Video hosting** — Vimeo or YouTube?
-3. **Cal.com iframe vs. redirect** — embed booking form on same page (iframe), or link to Cal.com directly?
-4. **Unsubscribe** — should prospects be able to opt out of future emails, or is this a one-time welcome only?
+1. **Domain:** `pullupsell.com` — use `team@pullupsell.com` as from address
+   - SPF/DKIM setup: Add Resend's SPF/DKIM values to pullupsell.com DNS
+   - Check: https://www.mxtoolbox.com/spf.aspx once configured
+   
+2. **Video hosting:** YouTube (unlisted)
+   - Upload Video 1 as "Unlisted" (not Private, not Public)
+   - Get embed code from YouTube share menu
+   - Paste into `/demo` landing page
+   
+3. **Cal.com embed:** iframe (same page)
+   - Embed Cal.com booking form directly on `/demo` page
+   - Pre-fill prospect name/email/phone from URL params
+   - No redirect, prospect books on same page where they watched video
+   
+4. **Analytics:** Yes, track on `/demo` page
+   - Add Google Analytics 4 (GA4) to `/demo` landing page
+   - Track: video play, video completion, booking form interaction, call booked
+   - Dashboard: see which prospects watch video, which book calls, drop-off points
+   - Setup: Create GA4 account → add tracking ID to `/demo` page
