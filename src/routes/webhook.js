@@ -2,7 +2,7 @@ const express = require('express');
 const config = require('../config');
 const { scoreLead } = require('../services/leadScorer');
 const { initiateCall } = require('../services/twilioCall');
-const { logLead } = require('../services/googleSheets');
+const { logLead, logProspect } = require('../services/googleSheets');
 
 const router = express.Router();
 
@@ -109,6 +109,72 @@ router.post('/leads', async (req, res) => {
     });
   } catch (error) {
     console.error('[API] Error processing lead:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Handle preflight OPTIONS request for CORS
+router.options('/prospects', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', 'https://roof-avenger.base44.app');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.sendStatus(200);
+});
+
+// Roofer prospect signup from the RoofAvenger landing page (sales pipeline,
+// separate from the homeowner /leads pipeline — no scoring or voice call here)
+router.post('/prospects', async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', 'https://roof-avenger.base44.app');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  try {
+    console.log('[API] Prospect submission received');
+
+    const {
+      companyName,
+      ownerName,
+      phone,
+      email,
+      services,
+      currentChallenge,
+      preferredContactTime,
+      cityState,
+    } = req.body;
+
+    if (!companyName || !ownerName || !phone) {
+      console.warn('[API] Missing required fields (companyName, ownerName, phone)');
+      return res.status(400).json({
+        error: 'Missing required fields: companyName, ownerName, phone',
+      });
+    }
+
+    const prospectData = {
+      companyName: companyName.trim(),
+      ownerName: ownerName.trim(),
+      phone: phone.trim(),
+      email: (email || '').trim(),
+      services: (services || '').trim(),
+      currentChallenge: (currentChallenge || '').trim(),
+      preferredContactTime: (preferredContactTime || '').trim(),
+      cityState: (cityState || '').trim(),
+    };
+
+    console.log('[API] Parsed prospect:', {
+      company: prospectData.companyName,
+      owner: prospectData.ownerName,
+      phone: prospectData.phone,
+    });
+
+    await logProspect(prospectData);
+    console.log('[API] Prospect logged to Google Sheets');
+
+    res.status(200).json({
+      success: true,
+      message: `Thanks ${prospectData.ownerName}, we'll be in touch shortly.`,
+    });
+  } catch (error) {
+    console.error('[API] Error processing prospect:', error.message);
     res.status(500).json({ error: error.message });
   }
 });

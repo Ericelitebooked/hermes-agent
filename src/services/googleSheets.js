@@ -70,4 +70,54 @@ async function logLead(leadData) {
   }
 }
 
-module.exports = { logLead };
+async function logProspect(prospectData) {
+  try {
+    const auth = await getGoogleSheetsAuth();
+    const sheets = google.sheets({ version: 'v4', auth });
+
+    const timestamp = new Date().toISOString();
+
+    const row = [
+      timestamp, // Timestamp
+      prospectData.companyName || '', // Company Name
+      prospectData.ownerName || '', // Owner Name
+      prospectData.phone || '', // Phone
+      prospectData.email || '', // Email
+      prospectData.services || '', // Services Offered
+      prospectData.currentChallenge || '', // Current Challenge
+      prospectData.preferredContactTime || '', // Preferred Contact Time
+      prospectData.cityState || '', // City/State
+      'New', // Status (New / Contacted / Booked / Closed)
+      '', // Follow-up Notes (empty initially)
+    ];
+
+    console.log('[GoogleSheets] Appending prospect row for', prospectData.companyName);
+
+    const response = await sheets.spreadsheets.values.append({
+      spreadsheetId: config.googleSheetId,
+      range: 'Prospects!A:K',
+      valueInputOption: 'RAW',
+      resource: {
+        values: [row],
+      },
+    });
+
+    console.log('[GoogleSheets] Prospect logged successfully');
+    return response.data;
+  } catch (error) {
+    console.error('[GoogleSheets] Error logging prospect:', error.message);
+    if (error.message.includes('The caller does not have permission')) {
+      console.error(
+        '[GoogleSheets] Permission denied - ensure sheet is shared with service account email'
+      );
+    }
+    if (error.message.includes('Unable to parse range')) {
+      console.error(
+        '[GoogleSheets] "Prospects" tab not found - create a tab named exactly "Prospects" in the sheet'
+      );
+    }
+    throw error;
+  }
+}
+
+module.exports = { logLead, logProspect };
